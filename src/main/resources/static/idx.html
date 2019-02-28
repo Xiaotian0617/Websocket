@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>My WebSocket</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+Welcome To My WebSocket.<br/><br/>
+<div id="ws">
+    <input value="Huobi_BTC_USDT,Okex_BTCQUARTER_USD" style=" width: 300px" id="text" type="text"/>
+    <button onclick="sendSubscribe()">Subscribe</button>
+    <button onclick="closeWS()" :disabled="!opened">Close</button>
+    <button onclick="openWS()" :disabled="opened">Open</button>
+    <div id="info"></div>
+    <div id="info-msg" v-html="msg"></div>
+</div>
+</body>
+
+<script type="text/javascript">
+    var websocket = null;
+    var url = window.location.host;
+    var myuid = Math.random();
+
+    //url type
+    var protocol = window.location.protocol;
+    var ws_url_head;
+    if (protocol === 'http:')
+        ws_url_head = 'ws://';
+    else if (protocol === 'https:')
+        ws_url_head = 'wss://';
+
+
+    var sum = 0;
+    var wsVue = new Vue({
+        el: '#ws',
+        data: {
+            msg: "welcome to my websocket...<br/>",
+            opened: false
+        },
+        mounted: function () {
+            initWs();
+        }
+    });
+
+    function initWs() {
+        //check if your browser supports WebSocket
+        if ('WebSocket' in window) {
+            // websocket = new WebSocket("ws://118.31.73.51:1903/ws/uid01");
+            websocket = new WebSocket(ws_url_head + url + "/ws/" + myuid);
+            // websocket = new WebSocket("ws://120.55.45.178:80/ws/uid01");
+//            websocket = new WebSocket("ws://topcoin.bicoin.com.cn/ws/uid01");
+        }
+        else {
+            alert('Sorry, websocket not supported by your browser.')
+        }
+        //Error callback
+        websocket.onerror = function () {
+            setMessageContent("error!");
+            wsVue.opened = false;
+        };
+        //socket opened callback
+        websocket.onopen = function (event) {
+            setMessageContent("websocket opened");
+            wsVue.opened = true;
+        }
+        //message received callback
+        websocket.onmessage = function (event) {
+            setMessageContent(event.data);
+        }
+        //socket closed callback
+        websocket.onclose = function () {
+            setMessageContent("websocket closed");
+            wsVue.opened = false;
+        }
+        //when browser window closed, close the socket, to prevent server exception
+        window.onbeforeunload = function () {
+            websocket.close();
+        }
+    }
+
+    //update message to vue and then in div
+    function setMessageContent(content) {
+        sum++;
+        if (sum % 50 === 0) {
+            wsVue.msg = "";
+            sum = 0;
+        }
+        wsVue.msg += content + '<br/>';
+    }
+
+    //click to close the websocket
+    function closeWS() {
+        websocket.close();
+        wsVue.opened = false;
+    }
+
+    //click to open the websocket
+    function openWS() {
+        initWs();
+    }
+
+    //click to send message
+    function sendSubscribe() {
+        $("#info").html("");
+        var keys = document.getElementById('text').value;//获取输入框的订阅key
+        var json = JSON.stringify({
+            uid: myuid, keys: keys
+        })
+        $.ajax({
+            type: "post",
+            url: "/ws/resubscript",
+            dataType: "json",
+            data: json,
+            contentType: "application/json",
+            success: function (data) {
+                if (data == true) {
+                    $("#info").html("订阅成功")
+                } else {
+                    $("#info").html("订阅失败")
+                }
+            }
+        })
+
+    }
+</script>
+</body>
+</html>

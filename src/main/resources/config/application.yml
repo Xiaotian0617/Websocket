@@ -1,0 +1,31 @@
+spring:
+  redis:
+    host: 192.168.0.22
+    port: 6379
+    password: redis
+    database: 3
+    pool:
+      timeout: 1000
+    lettuce:
+        pool:
+          max-active: 1500
+          max-idle: 1000
+          max-wait: 5000ms
+
+  profiles:
+    active: prod
+
+  kafka:
+    #bootstrap-servers: 47.75.41.76:9092,47.52.249.78:9092,47.75.41.111:9092
+    bootstrap-servers: 47.99.127.216:9092
+
+logging:
+  config: classpath:config/logback.xml
+
+market-ws:
+  topic: blz-market-ws-${spring.profiles.active}
+  group: blz-market-ws-grp-${random.value}
+
+depth-ws:
+  topic: blz-depth-${spring.profiles.active}
+  group: blz-depth-grp-${random.value}
